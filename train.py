@@ -3,8 +3,8 @@
 
 # import the necessary packages
 from model.dataset import SegmentationDataset
-# from model.network import UNet
-# from model.network import HourGlass
+from model.network import UNet
+from model.network import HourGlass
 from model.network import SimpleConv
 
 from model import config
@@ -63,9 +63,9 @@ if __name__ == '__main__':
     testLoader = DataLoader(testDS, shuffle=False,batch_size=config.BATCH_SIZE, pin_memory=config.PIN_MEMORY,num_workers=8)
 
     # initialize the UNet or HourGlass model
-    model = SimpleConv((3,16),(16,1))
-    # model = HourGlass((3,16,32,64),(64,32,16,1))
-    # model = UNet((3,16,32,64),(64,32,16,1))
+    # model = SimpleConv((3,16),(16,1))
+    # model = HourGlass((3,16,32,64, 128),(128, 64,32,16,8))
+    model = UNet((3,16,32,64),(64,32,16,8))
     cnnet = model.to(config.DEVICE)
     print(model)
 

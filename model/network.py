@@ -27,6 +27,8 @@ class SimpleConv(Module):
                  dec_channels=(64, 32, 16, 1)):
         super().__init__()
 
+
+
         # store the encoder blocks and maxpooling layer
         self.enc_blocks = ModuleList([Block(enc_channels[i], enc_channels[i+1])
                                      for i in range(len(enc_channels) - 1)])
@@ -38,6 +40,7 @@ class SimpleConv(Module):
             [Block(dec_channels[i], dec_channels[i + 1])
              for i in range(len(dec_channels) - 1)])
         # TODO: prepare upconvolutions
+        
     
     def forward(self, x):
         # loop through the encoder blocks
@@ -53,6 +56,98 @@ class SimpleConv(Module):
             # TODO: upconvolutions
             x = self.dec_blocks[i](x)
         #
+        # return the final decoder output
+        return x
+
+
+    
+class HourGlass(Module):
+    def __init__(self, enc_channels=(3, 16, 32, 64),
+                 dec_channels=(64, 32, 16, 1)):
+        super().__init__()
+
+        assert len(enc_channels) == len(dec_channels), "need same size"
+
+        # store the encoder blocks and maxpooling layer
+        self.enc_blocks = ModuleList([Block(enc_channels[i], enc_channels[i+1])
+                                     for i in range(len(enc_channels) - 1)])
+        # TODO: prepare pooling
+        self.pool = MaxPool2d(2, 2)
+
+        # initialize decoder # channels, upsampler blocks, and decoder blocks
+        self.channels = dec_channels
+        self.dec_blocks = ModuleList(
+            [Block(dec_channels[i], dec_channels[i + 1])
+             for i in range(len(dec_channels) - 1)])
+        # TODO: prepare upconvolutions
+        self.upconvs = ModuleList([ConvTranspose2d(dec_channels[i], dec_channels[i], 2, stride=2)
+                        for i in range(len(dec_channels) - 1)])
+        self.conv = Conv2d(dec_channels[-1], 1, 3, padding=1)
+    
+    def forward(self, x):
+        # loop through the encoder blocks
+        for block in self.enc_blocks:
+            # pass the inputs through the current encoder block, store
+            # the outputs, and then apply maxpooling on the output
+            x = block(x)
+            # TODO: pooling
+            x = self.pool(x)
+
+        # decoder: loop through the number of channels
+        for i in range(len(self.channels) - 1):
+            # pass the inputs through the upsampler blocks
+            # TODO: upconvolutions
+            x = self.upconvs[i](x)
+            x = self.dec_blocks[i](x)
+        #
+        x = self.conv(x)
+        # return the final decoder output
+        return x
+
+  
+class UNet(Module):
+    def __init__(self, enc_channels=(3, 16, 32, 64),
+                 dec_channels=(64, 32, 16, 1)):
+        super().__init__()
+
+        assert len(enc_channels) == len(dec_channels), "need same size"
+
+        # store the encoder blocks and maxpooling layer
+        self.enc_blocks = ModuleList([Block(enc_channels[i], enc_channels[i+1])
+                                     for i in range(len(enc_channels) - 1)])
+        # TODO: prepare pooling
+        self.pool = MaxPool2d(2, 2)
+
+        # initialize decoder # channels, upsampler blocks, and decoder blocks
+        self.channels = dec_channels
+        self.dec_blocks = ModuleList(
+            [Block(2 * dec_channels[i], dec_channels[i + 1])
+             for i in range(len(dec_channels) - 1)])
+        # TODO: prepare upconvolutions
+        self.upconvs = ModuleList([ConvTranspose2d(dec_channels[i], dec_channels[i], 2, stride=2)
+                        for i in range(len(dec_channels) - 1)])
+        self.conv = Conv2d(dec_channels[-1], 1, 3, padding=1)
+    
+    def forward(self, x):
+        stored_output = []
+        # loop through the encoder blocks
+        for block in self.enc_blocks:
+            # pass the inputs through the current encoder block, store
+            # the outputs, and then apply maxpooling on the output
+            x = block(x)
+            stored_output.append(x)
+            x = self.pool(x)
+
+        # decoder: loop through the number of channels
+        for i in range(len(self.channels) - 1):
+            # pass the inputs through the upsampler blocks
+            # TODO: upconvolutions
+            output = stored_output.pop()
+            x = self.upconvs[i](x)
+            x = torch.cat([x, output], dim=1)
+            x = self.dec_blocks[i](x)
+        #
+        x = self.conv(x)
         # return the final decoder output
         return x
 
