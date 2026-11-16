@@ -63,7 +63,7 @@ class SimpleConv(Module):
     
 class HourGlass(Module):
     def __init__(self, enc_channels=(3, 16, 32, 64),
-                 dec_channels=(64, 32, 16, 1)):
+                 dec_channels=(64, 32, 16, 8)):
         super().__init__()
 
         assert len(enc_channels) == len(dec_channels), "need same size"
@@ -107,7 +107,7 @@ class HourGlass(Module):
   
 class UNet(Module):
     def __init__(self, enc_channels=(3, 16, 32, 64),
-                 dec_channels=(64, 32, 16, 1)):
+                 dec_channels=(64, 32, 16, 8)):
         super().__init__()
 
         assert len(enc_channels) == len(dec_channels), "need same size"
