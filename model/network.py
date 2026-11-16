@@ -151,5 +151,26 @@ class UNet(Module):
         # return the final decoder output
         return x
 
-
-    
+class AutoEncoder(Module):
+        def __init__(self, in_channel=3,
+                 out_channel=3):
+        super().__init__()
+        self.encoder = nn.Sequential(
+                nn.Conv2d(in_channel, 16, kernel_size=3, stride=2, padding=1),
+                nn.Relu(),
+                nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1),
+                nn.Relu(),
+                nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),
+                nn.Relu()
+        )
+        self.encoder = nn.Sequential(
+                nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=1),
+                nn.Relu(),
+                nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2, padding=1),
+                nn.Relu(),
+                nn.ConvTranspose2d(16, out_channel, kernel_size=3, stride=2, padding=1),
+        )
+        def forward(self, x):
+            x = self.encoder(x)
+            x = self.decoder(x)
+            return x
